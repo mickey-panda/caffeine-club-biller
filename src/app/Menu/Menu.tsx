@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import menuItems from '../data/menu.json';
-import { MenuItem } from './../../types';
+import { MenuItem } from '../../types';
 
 interface MenuProps {
   addItemToTable: (item: MenuItem) => void;
