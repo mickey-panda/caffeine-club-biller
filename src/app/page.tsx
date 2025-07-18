@@ -24,6 +24,7 @@ export default function Home() {
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCashInput, setShowCashInput] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Both' | null>(null);
   const [cashAmount, setCashAmount] = useState('');
 
