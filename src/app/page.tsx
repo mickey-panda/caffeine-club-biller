@@ -1,103 +1,277 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from 'react';
+import Menu from './Menu/page';
+import TableStatus from './TableStatus/page';
+import BillDetails from './BillDetails/page';
+import { Table, MenuItem } from './../types';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // Initialize tables with default state for both server and client
+  const initialTables: Table[] = [
+    { id: 1, isOccupied: false, items: [], total: 0 },
+    { id: 2, isOccupied: false, items: [], total: 0 },
+    { id: 3, isOccupied: false, items: [], total: 0 },
+    { id: 4, isOccupied: false, items: [], total: 0 },
+    { id: 5, isOccupied: false, items: [], total: 0 },
+    { id: 6, isOccupied: false, items: [], total: 0 },
+  ];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const [tables, setTables] = useState<Table[]>(initialTables);
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [billAmount, setBillAmount] = useState(0);
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCashInput, setShowCashInput] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Both' | null>(null);
+  const [cashAmount, setCashAmount] = useState('');
+
+  // Load data from localStorage on client-side after initial render
+  useEffect(() => {
+    const savedTables = localStorage.getItem('restaurantTables');
+    if (savedTables) {
+      try {
+        const parsedTables = JSON.parse(savedTables);
+        // Validate parsed data against Table type
+        if (Array.isArray(parsedTables) && parsedTables.every(t => t.id && 'isOccupied' in t && 'items' in t && 'total' in t)) {
+          setTables(parsedTables);
+          // Sync selectedTable with updated tables
+          if (selectedTable) {
+            const updatedSelectedTable = parsedTables.find(t => t.id === selectedTable.id) || null;
+            setSelectedTable(updatedSelectedTable);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse localStorage data:', error);
+      }
+    }
+  }, []);
+
+  // Save tables to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('restaurantTables', JSON.stringify(tables));
+  }, [tables]);
+
+  const handleTableSelect = (table: Table) => {
+    setSelectedTable(table);
+    if (!table.isOccupied) {
+      setTables(tables.map(t => t.id === table.id ? { ...t, isOccupied: true } : t));
+    }
+  };
+
+  const addItemToTable = (item: MenuItem) => {
+    if (!selectedTable) return;
+    // Check if the item already exists in the table's items
+    const existingItem = selectedTable.items.find(i => i.id === item.id);
+    let updatedItems: MenuItem[];
+    
+    if (existingItem) {
+      // If item exists, increment its quantity
+      updatedItems = selectedTable.items.map(i =>
+        i.id === item.id ? { ...i, quantity: i.quantity +1 } : i
+      );
+    } else {
+      // If item doesn't exist, add it with the provided quantity
+      updatedItems = [...selectedTable.items, { ...item }];
+    }
+
+    const updatedTotal = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const updatedTables = tables.map(t =>
+      t.id === selectedTable.id ? { ...t, items: updatedItems, total: updatedTotal } : t
+    );
+    setTables(updatedTables);
+    setSelectedTable({ ...selectedTable, items: updatedItems, total: updatedTotal });
+  };
+
+  const updateItemQuantity = (itemId: number, quantity: number) => {
+    if (!selectedTable) return;
+    const updatedItems = selectedTable.items.map(i =>
+      i.id === itemId ? { ...i, quantity: Math.max(0, quantity) } : i
+    ).filter(i => i.quantity > 0);
+    const updatedTotal = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const updatedTables = tables.map(t =>
+      t.id === selectedTable.id ? { ...t, items: updatedItems, total: updatedTotal } : t
+    );
+    setTables(updatedTables);
+    setSelectedTable({ ...selectedTable, items: updatedItems, total: updatedTotal });
+  };
+
+  const generateBill = () => {
+    if (!selectedTable) return;
+
+    if(selectedTable.total === 0){
+      const updatedTables = tables.map(t =>
+        t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
+      );
+      setTables(updatedTables);
+      setSelectedTable(null);
+      localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+      return;
+    }
+    setBillAmount(selectedTable.total);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentMethod = (method: 'UPI' | 'Cash' | 'Both') => {
+    setPaymentMethod(method);
+    setShowPaymentModal(false);
+    if (method === 'UPI') {
+      setShowQRCode(true);
+    } else if (method === 'Cash') {
+      const updatedTables = tables.map(t =>
+        t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
+      );
+      setTables(updatedTables);
+      setSelectedTable(null);
+      localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+    } else if (method === 'Both') {
+      setShowCashInput(true);
+    }
+  };
+
+  const handleCashSubmit = () => {
+    const cash = parseFloat(cashAmount);
+    if (isNaN(cash) || cash < 0 || cash > billAmount) {
+      alert('Please enter a valid cash amount (0 to total bill).');
+      return;
+    }
+    setShowCashInput(false);
+    if (cash === billAmount) {
+      const updatedTables = tables.map(t =>
+        t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
+      );
+      setTables(updatedTables);
+      setSelectedTable(null);
+      localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+    } else {
+      setBillAmount(billAmount - cash);
+      setShowQRCode(true);
+    }
+    setCashAmount('');
+  };
+
+
+  const closeQRCode = () => {
+    setShowQRCode(false);
+    setPaymentMethod(null);
+    const updatedTables = tables.map(t =>
+      t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
+    );
+    setTables(updatedTables);
+    setSelectedTable(null);
+    localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentMethod(null);
+  };
+
+  const closeCashInput = () => {
+    setShowCashInput(false);
+    setCashAmount('');
+    setPaymentMethod(null);
+  };
+
+  // Generate UPI payment link
+  const upiLink = `upi://pay?pa=Q230526975@ybl&pn=CaffeineClub&am=${billAmount}&cu=INR`;
+
+  return (
+    <div className="min-h-screen bg-gray-600 p-6">
+      <h1 className="text-3xl font-bold text-center mb-6">Caffeine Club Billing System</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <TableStatus tables={tables} onTableSelect={handleTableSelect} />
+          {selectedTable && (
+            <BillDetails
+              table={selectedTable}
+              updateItemQuantity={updateItemQuantity}
+              generateBill={generateBill}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <Menu addItemToTable={addItemToTable} />
+      </div>
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Select Payment Method</h2>
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={() => handlePaymentMethod('UPI')}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+              >
+                UPI
+              </button>
+              <button
+                onClick={() => handlePaymentMethod('Cash')}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+              >
+                Cash
+              </button>
+              <button
+                onClick={() => handlePaymentMethod('Both')}
+                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition"
+              >
+                Both
+              </button>
+              <button
+                onClick={closePaymentModal}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showQRCode && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Scan to Pay ₹{billAmount}</h2>
+            <div className="flex justify-center mb-4">
+              <QRCodeSVG value={upiLink} size={200} />
+            </div>
+            <p className="text-center text-gray-400 mb-4">Pay using UPI</p>
+            <button
+              onClick={closeQRCode}
+              className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      {showCashInput && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Enter Cash Amount</h2>
+            <p className="text-center text-gray-600 mb-4">Total Bill: ₹{billAmount}</p>
+            <input
+              type="number"
+              value={cashAmount}
+              onChange={(e) => setCashAmount(e.target.value)}
+              placeholder="Enter cash amount"
+              className="w-full p-2 mb-4 border rounded"
+            />
+            <div className="flex gap-4">
+              <button
+                onClick={handleCashSubmit}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+              >
+                Submit
+              </button>
+              <button
+                onClick={closeCashInput}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
