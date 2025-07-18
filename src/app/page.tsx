@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from 'react';
-import Menu from './Menu/page';
-import TableStatus from './TableStatus/page';
-import BillDetails from './BillDetails/page';
+import Menu from './Menu/Menu';
+import TableStatus from './TableStatus/TableStatus';
+import BillDetails from './BillDetails/BillDetails';
 import { Table, MenuItem } from './../types';
 import { QRCodeSVG } from 'qrcode.react';
 

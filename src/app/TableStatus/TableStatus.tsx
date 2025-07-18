@@ -1,4 +1,4 @@
-import { Table } from './../../types';
+import { Table } from '../../types';
 
 interface TableStatusProps {
   tables: Table[];
