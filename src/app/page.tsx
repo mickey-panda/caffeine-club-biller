@@ -7,7 +7,6 @@ import { Table, MenuItem } from './../types';
 import { QRCodeSVG } from 'qrcode.react';
 import { Timestamp,addDoc,collection } from 'firebase/firestore';
 import {db} from '../app/Firebase/firebase';
-import Link from 'next/link';
 
 export default function Home() {
   // Initialize tables with default state for both server and client
@@ -208,9 +207,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-600 p-6">
       <h1 className="text-3xl font-bold text-center mb-6">Caffeine Club Billing System</h1>
-      <Link className="text-3xl font-bold text-center mb-6" href={'/AdminControl'}>
-        <h3 >Admin</h3>
-      </Link>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <TableStatus tables={tables} onTableSelect={handleTableSelect} />
@@ -284,7 +280,7 @@ export default function Home() {
               value={cashAmount}
               onChange={(e) => setCashAmount(e.target.value)}
               placeholder="Enter cash amount"
-              className="w-full p-2 mb-4 border rounded"
+              className="w-full text-black p-2 mb-4 border rounded"
             />
             <div className="flex gap-4">
               <button
