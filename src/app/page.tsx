@@ -5,6 +5,9 @@ import TableStatus from './TableStatus/TableStatus';
 import BillDetails from './BillDetails/BillDetails';
 import { Table, MenuItem } from './../types';
 import { QRCodeSVG } from 'qrcode.react';
+import { Timestamp,addDoc,collection } from 'firebase/firestore';
+import {db} from '../app/Firebase/firebase';
+import Link from 'next/link';
 
 export default function Home() {
   // Initialize tables with default state for both server and client
@@ -27,6 +30,7 @@ export default function Home() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Both' | null>(null);
   const [cashAmount, setCashAmount] = useState('');
+  const [paidAmountCash, setPaidAmountCash] = useState(0);
 
   // Load data from localStorage on client-side after initial render
   useEffect(() => {
@@ -53,6 +57,22 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('restaurantTables', JSON.stringify(tables));
   }, [tables]);
+
+  async function pushBillToFirebase (total : number, status : string, time : Timestamp, cash : number, upi : number, items : MenuItem[] | undefined){
+    try{
+      const docRef = await addDoc(collection(db,'bills'),{
+        total : total,
+        status : status,
+        time : time,
+        cash : cash,
+        upi : upi,
+        items : items,
+      });
+      console.log('Document written with ID : ',docRef.id);
+    }catch{
+      console.log('Push Bill Error');
+    }
+  }
 
   const handleTableSelect = (table: Table) => {
     setSelectedTable(table);
@@ -114,31 +134,36 @@ export default function Home() {
     setShowPaymentModal(true);
   };
 
-  const handlePaymentMethod = (method: 'UPI' | 'Cash' | 'Both') => {
+  const handlePaymentMethod = async (method: 'UPI' | 'Cash' | 'Both') => {
     setPaymentMethod(method);
     setShowPaymentModal(false);
     if (method === 'UPI') {
+      setPaidAmountCash(0);
       setShowQRCode(true);
     } else if (method === 'Cash') {
+      await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),billAmount,0, selectedTable?.items);
       const updatedTables = tables.map(t =>
         t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
       );
       setTables(updatedTables);
       setSelectedTable(null);
       localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+      setPaidAmountCash(0);
     } else if (method === 'Both') {
       setShowCashInput(true);
     }
   };
 
-  const handleCashSubmit = () => {
+  const handleCashSubmit = async () => {
     const cash = parseFloat(cashAmount);
+    
     if (isNaN(cash) || cash < 0 || cash > billAmount) {
       alert('Please enter a valid cash amount (0 to total bill).');
       return;
     }
     setShowCashInput(false);
     if (cash === billAmount) {
+      await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),billAmount,0, selectedTable?.items);
       const updatedTables = tables.map(t =>
         t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
       );
@@ -146,14 +171,16 @@ export default function Home() {
       setSelectedTable(null);
       localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
     } else {
-      setBillAmount(billAmount - cash);
+      setPaidAmountCash(cash);
       setShowQRCode(true);
     }
     setCashAmount('');
   };
 
 
-  const closeQRCode = () => {
+  const closeQRCode = async() => {
+    await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),paidAmountCash,billAmount-paidAmountCash, selectedTable?.items);
+    setPaidAmountCash(0);
     setShowQRCode(false);
     setPaymentMethod(null);
     const updatedTables = tables.map(t =>
@@ -181,6 +208,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-600 p-6">
       <h1 className="text-3xl font-bold text-center mb-6">Caffeine Club Billing System</h1>
+      <Link className="text-3xl font-bold text-center mb-6" href={'/AdminControl'}>
+        <h3 >Admin</h3>
+      </Link>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <TableStatus tables={tables} onTableSelect={handleTableSelect} />
@@ -230,7 +260,7 @@ export default function Home() {
       {showQRCode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Scan to Pay ₹{billAmount}</h2>
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Scan to Pay ₹{billAmount - paidAmountCash}</h2>
             <div className="flex justify-center mb-4">
               <QRCodeSVG value={upiLink} size={200} />
             </div>
