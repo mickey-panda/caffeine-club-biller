@@ -137,8 +137,9 @@ export async function pushCashTransaction(amount:number, reason:string, time: Ti
       if(docRef.id){
         updateTotalCash(amount);
       }
-    }catch{
+    }catch(err){
       console.log('Push cash Error');
+      throw err;
     }
 }
 export async function pushUpiTransaction(amount:number, reason:string, time: Timestamp) {
@@ -151,8 +152,9 @@ export async function pushUpiTransaction(amount:number, reason:string, time: Tim
       if(docRef.id){
         updateTotalUpi(amount);
       }
-    }catch{
+    }catch(err){
       console.log('Push upi Error');
+      throw err;
     }
 }
 
