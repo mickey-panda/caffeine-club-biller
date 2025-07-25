@@ -2,7 +2,10 @@
 import { useState, useEffect } from "react";
 import { MenuItem } from "@/types";
 import { Timestamp } from "firebase/firestore";
-import { getCashTransactions, getUpiTransactions, getPendingBills, getBills } from "../Utilities/firebaseHelper";
+import { getCashTransactions, getUpiTransactions, getPendingBills, getBills
+  ,getTotalCashRegister, getTotalUpiRegister
+ } from "../Utilities/firebaseHelper";
+import { PencilSquareIcon } from '@heroicons/react/24/solid';
 
 interface Bill {
   id: string;
@@ -42,6 +45,8 @@ export default function Manager() {
   const [pendingBills, setPendingBills] = useState<Bill[]>([]);
   const [allBills, setAllBills] = useState<Bill[]>([]);
   const [selectedTab, setSelectedTab] = useState<"cash" | "upi" | "bills" | "pending">("bills");
+  const [totalCash, setTotalCash] = useState<number>(0);
+  const [totalUpi, setTotalUpi] = useState<number>(0);
 
   const fetchCashTransactions = async(startDate : Timestamp, endDate : Timestamp) => {
     try{
@@ -75,6 +80,14 @@ export default function Manager() {
         setError("Failed to load all Bills. Please try again." + err);
     }
   }
+  const fetchTotalCashRegister = async() => {
+    const total = await getTotalCashRegister();
+    setTotalCash(total);
+  }
+  const fetchTotalUpiRegister = async() => {
+    const total = await getTotalUpiRegister();
+    setTotalUpi(total);
+  }
 
   useEffect(() => {
     const startTimestamp = Timestamp.fromDate(startDate);
@@ -86,10 +99,8 @@ export default function Manager() {
                 fetchUpiTransactions(startTimestamp, endTimestamp),
                 fetchPendingBills(startTimestamp,endTimestamp),
                 fetchAllBills(startTimestamp,endTimestamp)]);
-
-                console.log(allBills);
-                console.log(upiTransactions);
-                console.log(cashTransactions);
+                fetchTotalCashRegister();
+                fetchTotalUpiRegister();
         }catch{
             setLoading(false);
             setError('Could not load data');
@@ -122,6 +133,28 @@ export default function Manager() {
             onChange={(e) => setEndDate(new Date(e.target.value))}
             className="p-2 border rounded text-black"
           />
+        </div>
+        <div className="flex items-center ml-16 mb-4">
+          <div>
+            <p className="text-gray-500 text-sm">Total Cash</p>
+            <p className="text-xl font-semibold text-gray-800">{totalCash}</p>
+          </div>
+          <button 
+            className="ml-3 p-1 text-gray-400 hover:text-green-600 transition-colors"
+            onClick={() => console.log("Edit Cash")}>
+            <PencilSquareIcon className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex items-center ml-16 mb-4">
+          <div>
+            <p className="text-gray-500 text-sm">Total UPI</p>
+            <p className="text-xl font-semibold text-gray-800">{totalUpi}</p>
+          </div>
+          <button 
+            className="ml-3 p-1 text-gray-400 hover:text-green-600 transition-colors"
+            onClick={() => console.log("Edit Upi")}>
+            <PencilSquareIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { Timestamp,addDoc,collection, where, getDocs, query, updateDoc, doc, increment } from 'firebase/firestore';
+import { Timestamp,addDoc,collection, where, getDocs, query, updateDoc, doc, increment, getDoc } from 'firebase/firestore';
 import {db} from '../Firebase/firebase';
 import { MenuItem } from '@/types';
 
@@ -175,5 +175,41 @@ export async function updateTotalUpi(amount:number) {
         });
     }catch(err){
         console.log('Could not update the total cash register', err);
+    }
+}
+
+export async function getTotalCashRegister():Promise<number>{
+    try{
+        const docRef = doc(db,'total-cash-register', 'S4GHfpZ2V1W9CCUnM31s');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log("Total:", data.total);
+            return data.total as number;
+        } else {
+            console.log("No such document!");
+            return 0;
+        }
+    }catch(err){
+        console.log('could not get the total cash', err);
+        return 0;
+    }
+}
+
+export async function getTotalUpiRegister():Promise<number>{
+    try{
+        const docRef = doc(db,'total-upi-register', 'wRQJwhxUyX4lK54ZOfcA');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log("Total:", data.total);
+            return data.total as number;
+        } else {
+            console.log("No such document!");
+            return 0;
+        }
+    }catch(err){
+        console.log('could not get the total upi', err);
+        return 0;
     }
 }
