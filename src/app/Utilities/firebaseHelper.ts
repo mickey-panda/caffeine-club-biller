@@ -37,7 +37,14 @@ export async function pushBillToFirebase (total : number, status : string, time 
         items : items,
         mobile : mobile,
       });
-      console.log('Document written with ID : ',docRef.id);
+      if(docRef.id){
+        if(cash>0){
+            await pushCashTransaction(cash,'Bill - '+docRef.id, Timestamp.now());
+        }
+        if(upi>0){
+            await pushUpiTransaction(upi,'Bill - '+docRef.id, Timestamp.now());
+        }
+      }
     }catch{
       console.log('Push Bill Error');
     }
@@ -117,5 +124,30 @@ export async function getUpiTransactions (startDate : Timestamp, endDate : Times
     } catch (error) {
       console.error("Failed to fetch Upi transactions:", error);
       return [];
+    }
+}
+
+export async function pushCashTransaction(amount:number, reason:string, time: Timestamp) {
+    try{
+      const docRef = await addDoc(collection(db,'cash-transactions'),{
+        amount : amount,
+        reason : reason,
+        time : time,
+      });
+      console.log('Document written with ID : ',docRef.id);
+    }catch{
+      console.log('Push cash Error');
+    }
+}
+export async function pushUpiTransaction(amount:number, reason:string, time: Timestamp) {
+    try{
+      const docRef = await addDoc(collection(db,'upi-transactions'),{
+        amount : amount,
+        reason : reason,
+        time : time,
+      });
+      console.log('Document written with ID : ',docRef.id);
+    }catch{
+      console.log('Push upi Error');
     }
 }
