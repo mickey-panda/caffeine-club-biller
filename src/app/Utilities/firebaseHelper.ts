@@ -1,4 +1,4 @@
-import { Timestamp,addDoc,collection, where, getDocs, query } from 'firebase/firestore';
+import { Timestamp,addDoc,collection, where, getDocs, query, updateDoc, doc, increment } from 'firebase/firestore';
 import {db} from '../Firebase/firebase';
 import { MenuItem } from '@/types';
 
@@ -134,7 +134,9 @@ export async function pushCashTransaction(amount:number, reason:string, time: Ti
         reason : reason,
         time : time,
       });
-      console.log('Document written with ID : ',docRef.id);
+      if(docRef.id){
+        updateTotalCash(amount);
+      }
     }catch{
       console.log('Push cash Error');
     }
@@ -146,8 +148,32 @@ export async function pushUpiTransaction(amount:number, reason:string, time: Tim
         reason : reason,
         time : time,
       });
-      console.log('Document written with ID : ',docRef.id);
+      if(docRef.id){
+        updateTotalUpi(amount);
+      }
     }catch{
       console.log('Push upi Error');
+    }
+}
+
+export async function updateTotalCash(amount:number) {
+    try{
+        const docRef = doc(db, "total-cash-register", "S4GHfpZ2V1W9CCUnM31s");
+        await updateDoc(docRef, {
+            total: increment(amount)
+        });
+    }catch(err){
+        console.log('Could not update the total cash register', err);
+    }
+}
+
+export async function updateTotalUpi(amount:number) {
+    try{
+        const docRef = doc(db, "total-upi-register", "wRQJwhxUyX4lK54ZOfcA");
+        await updateDoc(docRef, {
+            total: increment(amount)
+        });
+    }catch(err){
+        console.log('Could not update the total cash register', err);
     }
 }
