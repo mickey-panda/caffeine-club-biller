@@ -2,7 +2,10 @@
 import { useState, useEffect } from "react";
 import { MenuItem } from "@/types";
 import { Timestamp } from "firebase/firestore";
-import { getCashTransactions, getUpiTransactions, getPendingBills, getBills } from "../Utilities/firebaseHelper";
+import { getCashTransactions, getUpiTransactions, getPendingBills, getBills
+  ,getTotalCashRegister, getTotalUpiRegister, pushCashTransaction, pushUpiTransaction
+ } from "../Utilities/firebaseHelper";
+import { PencilSquareIcon } from '@heroicons/react/24/solid';
 
 interface Bill {
   id: string;
@@ -42,6 +45,20 @@ export default function Manager() {
   const [pendingBills, setPendingBills] = useState<Bill[]>([]);
   const [allBills, setAllBills] = useState<Bill[]>([]);
   const [selectedTab, setSelectedTab] = useState<"cash" | "upi" | "bills" | "pending">("bills");
+  const [totalCash, setTotalCash] = useState<number>(0);
+  const [totalUpi, setTotalUpi] = useState<number>(0);
+
+  //for cashTransactions
+  const [isCashTransModalOpen, setIsCashTransModalOpen] = useState(false);
+  const [cashTransAmount, setCashTransAmount] = useState<string>("");
+  const [cashTransReason, setCashTransReason] = useState<string>("");
+  const [cashTransFormError, setCashTransFormError] = useState<string | null>(null);
+
+  //for upi transactions
+  const [isUpiTransModalOpen, setIsUpiTransModalOpen] = useState(false);
+  const [upiTransAmount, setUpiTransAmount] = useState<string>("");
+  const [upiTransReason, setUpiTransReason] = useState<string>("");
+  const [upiTransFormError, setUpiTransFormError] = useState<string | null>(null);
 
   const fetchCashTransactions = async(startDate : Timestamp, endDate : Timestamp) => {
     try{
@@ -75,6 +92,89 @@ export default function Manager() {
         setError("Failed to load all Bills. Please try again." + err);
     }
   }
+  const fetchTotalCashRegister = async() => {
+    const total = await getTotalCashRegister();
+    setTotalCash(total);
+  }
+  const fetchTotalUpiRegister = async() => {
+    const total = await getTotalUpiRegister();
+    setTotalUpi(total);
+  }
+  const addNewCashTransaction = async(amount: number, reason: string) =>{
+    try{
+      await pushCashTransaction(amount, reason, Timestamp.now());
+    }catch(err){
+      console.log('error pushing the transaction', err);
+    }
+  }
+
+  const addNewUpiTransaction = async(amount: number, reason: string) =>{
+    try{
+      await pushUpiTransaction(amount, reason, Timestamp.now());
+    }catch(err){
+      console.log('error pushing the transaction', err);
+    }
+  }
+
+  const handleOpenCashModal = () => {
+    setCashTransAmount("");
+    setCashTransReason("");
+    setCashTransFormError(null);
+    setIsCashTransModalOpen(true);
+  };
+  const handleOpenUpiModal = () => {
+    setUpiTransAmount("");
+    setUpiTransReason("");
+    setUpiTransFormError(null);
+    setIsUpiTransModalOpen(true);
+  };
+
+  const handleCloseCashModal = () => {
+    setIsCashTransModalOpen(false);
+  };
+  const handleCloseUpiModal = () => {
+    setIsUpiTransModalOpen(false);
+  };
+
+  const handleSubmitCashModal = async () => {
+    const amountNum = Number(cashTransAmount);
+    if (isNaN(amountNum)) {
+      setCashTransFormError("Please enter a valid amount.");
+      return;
+    }
+    if (!cashTransReason.trim()) {
+      setCashTransFormError("Reason is required.");
+      return;
+    }
+
+    try {
+      await addNewCashTransaction(amountNum, cashTransReason);
+      handleCloseCashModal();
+    } catch (e) {
+      setCashTransFormError("Failed to add transaction. Try again.");
+      console.error(e);
+    }
+  };
+
+  const handleSubmitUpiModal = async () => {
+    const amountNum = Number(upiTransAmount);
+    if (isNaN(amountNum)) {
+      setUpiTransFormError("Please enter a valid amount.");
+      return;
+    }
+    if (!upiTransReason.trim()) {
+      setUpiTransFormError("Reason is required.");
+      return;
+    }
+
+    try {
+      await addNewUpiTransaction(amountNum, upiTransReason);
+      handleCloseUpiModal();
+    } catch (e) {
+      setUpiTransFormError("Failed to add transaction. Try again.");
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const startTimestamp = Timestamp.fromDate(startDate);
@@ -86,10 +186,8 @@ export default function Manager() {
                 fetchUpiTransactions(startTimestamp, endTimestamp),
                 fetchPendingBills(startTimestamp,endTimestamp),
                 fetchAllBills(startTimestamp,endTimestamp)]);
-
-                console.log(allBills);
-                console.log(upiTransactions);
-                console.log(cashTransactions);
+                fetchTotalCashRegister();
+                fetchTotalUpiRegister();
         }catch{
             setLoading(false);
             setError('Could not load data');
@@ -122,6 +220,28 @@ export default function Manager() {
             onChange={(e) => setEndDate(new Date(e.target.value))}
             className="p-2 border rounded text-black"
           />
+        </div>
+        <div className="flex items-center ml-16 mb-4">
+          <div>
+            <p className="text-gray-500 text-sm">Total Cash</p>
+            <p className="text-xl font-semibold text-gray-800">{totalCash}</p>
+          </div>
+          <button 
+            className="ml-3 p-1 text-gray-400 hover:text-green-600 transition-colors"
+            onClick={handleOpenCashModal}>
+            <PencilSquareIcon className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex items-center ml-16 mb-4">
+          <div>
+            <p className="text-gray-500 text-sm">Total UPI</p>
+            <p className="text-xl font-semibold text-gray-800">{totalUpi}</p>
+          </div>
+          <button 
+            className="ml-3 p-1 text-gray-400 hover:text-green-600 transition-colors"
+            onClick={handleOpenUpiModal}>
+            <PencilSquareIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -279,6 +399,124 @@ export default function Manager() {
                 ))}
               </tbody>
             </table>
+        </div>
+      )}
+
+      {/*showing the cash transaction modal*/}
+      {isCashTransModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={handleCloseCashModal}
+          />
+
+          {/* Modal */}
+          <div className="relative z-50 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-xl font-semibold text-gray-800">
+              Add Cash Transaction
+            </h3>
+
+            {cashTransFormError && (
+              <p className="mb-3 text-sm text-red-500">{cashTransFormError}</p>
+            )}
+
+            <div className="mb-4">
+              <label className="mb-1 block text-sm text-gray-600">Amount (₹)</label>
+              <input
+                type="number"
+                value={cashTransAmount}
+                onChange={(e) => setCashTransAmount(e.target.value)}
+                className="w-full rounded border p-2 text-black outline-none focus:border-pink-500"
+                placeholder="Enter amount"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-1 block text-sm text-gray-600">Reason</label>
+              <input
+                type="text"
+                value={cashTransReason}
+                onChange={(e) => setCashTransReason(e.target.value)}
+                className="w-full rounded border p-2 text-black outline-none focus:border-pink-500"
+                placeholder="Why are you editing cash?"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseCashModal}
+                className="rounded bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitCashModal}
+                className="rounded bg-pink-500 px-4 py-2 text-white hover:bg-pink-600"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/*showing the upi transaction modal*/}
+      {isUpiTransModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={handleCloseUpiModal}
+          />
+
+          {/* Modal */}
+          <div className="relative z-50 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-xl font-semibold text-gray-800">
+              Add UPI Transaction
+            </h3>
+
+            {upiTransFormError && (
+              <p className="mb-3 text-sm text-red-500">{upiTransFormError}</p>
+            )}
+
+            <div className="mb-4">
+              <label className="mb-1 block text-sm text-gray-600">Amount (₹)</label>
+              <input
+                type="number"
+                value={upiTransAmount}
+                onChange={(e) => setUpiTransAmount(e.target.value)}
+                className="w-full rounded border p-2 text-black outline-none focus:border-pink-500"
+                placeholder="Enter amount"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-1 block text-sm text-gray-600">Reason</label>
+              <input
+                type="text"
+                value={upiTransReason}
+                onChange={(e) => setUpiTransReason(e.target.value)}
+                className="w-full rounded border p-2 text-black outline-none focus:border-pink-500"
+                placeholder="Why are you editing cash?"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseUpiModal}
+                className="rounded bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitUpiModal}
+                className="rounded bg-pink-500 px-4 py-2 text-white hover:bg-pink-600"
+              >
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

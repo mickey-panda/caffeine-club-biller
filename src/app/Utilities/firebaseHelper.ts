@@ -1,4 +1,4 @@
-import { Timestamp,addDoc,collection, where, getDocs, query } from 'firebase/firestore';
+import { Timestamp,addDoc,collection, where, getDocs, query, updateDoc, doc, increment, getDoc } from 'firebase/firestore';
 import {db} from '../Firebase/firebase';
 import { MenuItem } from '@/types';
 
@@ -37,7 +37,14 @@ export async function pushBillToFirebase (total : number, status : string, time 
         items : items,
         mobile : mobile,
       });
-      console.log('Document written with ID : ',docRef.id);
+      if(docRef.id){
+        if(cash>0){
+            await pushCashTransaction(cash,'Bill - '+docRef.id, Timestamp.now());
+        }
+        if(upi>0){
+            await pushUpiTransaction(upi,'Bill - '+docRef.id, Timestamp.now());
+        }
+      }
     }catch{
       console.log('Push Bill Error');
     }
@@ -117,5 +124,94 @@ export async function getUpiTransactions (startDate : Timestamp, endDate : Times
     } catch (error) {
       console.error("Failed to fetch Upi transactions:", error);
       return [];
+    }
+}
+
+export async function pushCashTransaction(amount:number, reason:string, time: Timestamp) {
+    try{
+      const docRef = await addDoc(collection(db,'cash-transactions'),{
+        amount : amount,
+        reason : reason,
+        time : time,
+      });
+      if(docRef.id){
+        updateTotalCash(amount);
+      }
+    }catch(err){
+      console.log('Push cash Error');
+      throw err;
+    }
+}
+export async function pushUpiTransaction(amount:number, reason:string, time: Timestamp) {
+    try{
+      const docRef = await addDoc(collection(db,'upi-transactions'),{
+        amount : amount,
+        reason : reason,
+        time : time,
+      });
+      if(docRef.id){
+        updateTotalUpi(amount);
+      }
+    }catch(err){
+      console.log('Push upi Error');
+      throw err;
+    }
+}
+
+export async function updateTotalCash(amount:number) {
+    try{
+        const docRef = doc(db, "total-cash-register", "S4GHfpZ2V1W9CCUnM31s");
+        await updateDoc(docRef, {
+            total: increment(amount)
+        });
+    }catch(err){
+        console.log('Could not update the total cash register', err);
+    }
+}
+
+export async function updateTotalUpi(amount:number) {
+    try{
+        const docRef = doc(db, "total-upi-register", "wRQJwhxUyX4lK54ZOfcA");
+        await updateDoc(docRef, {
+            total: increment(amount)
+        });
+    }catch(err){
+        console.log('Could not update the total cash register', err);
+    }
+}
+
+export async function getTotalCashRegister():Promise<number>{
+    try{
+        const docRef = doc(db,'total-cash-register', 'S4GHfpZ2V1W9CCUnM31s');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log("Total:", data.total);
+            return data.total as number;
+        } else {
+            console.log("No such document!");
+            return 0;
+        }
+    }catch(err){
+        console.log('could not get the total cash', err);
+        return 0;
+    }
+}
+
+export async function getTotalUpiRegister():Promise<number>{
+    try{
+        const docRef = doc(db,'total-upi-register', 'wRQJwhxUyX4lK54ZOfcA');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log("Total:", data.total);
+            return data.total as number;
+        } else {
+            console.log("No such document!");
+            return 0;
+        }
+    }catch(err){
+        console.log('could not get the total upi', err);
+        return 0;
     }
 }
