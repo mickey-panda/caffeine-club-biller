@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { MenuItem } from "@/types";
-import { db } from "../Firebase/firebase"; 
-import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
+import {  Timestamp } from "firebase/firestore";
+import { getBills } from "../Utilities/firebaseHelper";
 
 interface Bill {
   id:string,
@@ -14,24 +14,7 @@ interface Bill {
   time: Timestamp;
 }
 
-async function getBills(startDate: Timestamp, endDate: Timestamp): Promise<Bill[]> {
-  try {
-    const billsQuery = query(
-      collection(db, "bills"),
-      where("time", ">=", startDate),
-      where("time", "<=", endDate)
-    );
-    const querySnapshot = await getDocs(billsQuery);
-    const documents: Bill[] = querySnapshot.docs.map(doc => ({
-        id:doc.id,
-      ...doc.data(),
-    })) as Bill[];
-    return documents;
-  } catch (error) {
-    console.error("Failed to fetch bills:", error);
-    return [];
-  }
-}
+
 
 export default function Admin() {
   const [documents, setDocuments] = useState<Bill[]>([]);
