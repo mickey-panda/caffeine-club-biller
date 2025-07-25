@@ -5,8 +5,9 @@ import TableStatus from './TableStatus/TableStatus';
 import BillDetails from './BillDetails/BillDetails';
 import { Table, MenuItem } from './../types';
 import { QRCodeSVG } from 'qrcode.react';
-import { Timestamp,addDoc,collection } from 'firebase/firestore';
-import {db} from '../app/Firebase/firebase';
+import { Timestamp} from 'firebase/firestore';
+import { pushBillToFirebase } from './Utilities/firebaseHelper';
+import Link from 'next/link';
 
 export default function Home() {
   // Initialize tables with default state for both server and client
@@ -27,9 +28,11 @@ export default function Home() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCashInput, setShowCashInput] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Both' | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Both' | 'Pending' | null>(null);
   const [cashAmount, setCashAmount] = useState('');
   const [paidAmountCash, setPaidAmountCash] = useState(0);
+  const [isPhoneNumber, setIsPhoneNumber] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   // Load data from localStorage on client-side after initial render
   useEffect(() => {
@@ -56,22 +59,6 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('restaurantTables', JSON.stringify(tables));
   }, [tables]);
-
-  async function pushBillToFirebase (total : number, status : string, time : Timestamp, cash : number, upi : number, items : MenuItem[] | undefined){
-    try{
-      const docRef = await addDoc(collection(db,'bills'),{
-        total : total,
-        status : status,
-        time : time,
-        cash : cash,
-        upi : upi,
-        items : items,
-      });
-      console.log('Document written with ID : ',docRef.id);
-    }catch{
-      console.log('Push Bill Error');
-    }
-  }
 
   const handleTableSelect = (table: Table) => {
     setSelectedTable(table);
@@ -133,7 +120,7 @@ export default function Home() {
     setShowPaymentModal(true);
   };
 
-  const handlePaymentMethod = async (method: 'UPI' | 'Cash' | 'Both') => {
+  const handlePaymentMethod = async (method: 'UPI' | 'Cash' | 'Both' | 'Pending') => {
     setPaymentMethod(method);
     setShowPaymentModal(false);
     if (method === 'UPI') {
@@ -150,6 +137,8 @@ export default function Home() {
       setPaidAmountCash(0);
     } else if (method === 'Both') {
       setShowCashInput(true);
+    } else if(method === 'Pending'){
+      setIsPhoneNumber(true);
     }
   };
 
@@ -199,14 +188,38 @@ export default function Home() {
     setShowCashInput(false);
     setCashAmount('');
     setPaymentMethod(null);
+    setPaidAmountCash(0);
   };
+
+  const handlePhoneClose = async()=>{
+    setIsPhoneNumber(false);
+    setPhoneNumber('');
+  }
+  const handlePhoneSubmit = async()=>{
+    await pushBillToFirebase(billAmount,'Pending',Timestamp.now(),0,0, selectedTable?.items, phoneNumber);
+    setIsPhoneNumber(false);
+    setPhoneNumber('');
+    setPaymentMethod(null);
+    const updatedTables = tables.map(t =>
+      t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
+    );
+    setTables(updatedTables);
+    setSelectedTable(null);
+    localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+  }
 
   // Generate UPI payment link
   const upiLink = `upi://pay?pa=Q230526975@ybl&pn=CaffeineClub&am=${billAmount}&cu=INR`;
 
   return (
     <div className="min-h-screen bg-gray-600 p-6">
-      <h1 className="text-3xl font-bold text-center mb-6">Caffeine Club Billing System</h1>
+      <div className="text-xl flex gap-6 text-gray-600 font-semibold mb-8">
+          <span className='text-white'>Caffeine Club Biller</span>
+          <Link href={'/ManagerControl'}>
+            <span className='text-white'>Account-Details</span>
+          </Link>
+          
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <TableStatus tables={tables} onTableSelect={handleTableSelect} />
@@ -242,6 +255,12 @@ export default function Home() {
                 className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition"
               >
                 Both
+              </button>
+              <button
+                onClick={() => handlePaymentMethod('Pending')}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+              >
+                Pending
               </button>
               <button
                 onClick={closePaymentModal}
@@ -291,6 +310,35 @@ export default function Home() {
               </button>
               <button
                 onClick={closeCashInput}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isPhoneNumber && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Enter Phone number</h2>
+            <p className="text-center text-gray-600 mb-4">Total Bill: ₹{billAmount}</p>
+            <input
+              type="number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Enter Phone number"
+              className="w-full text-black p-2 mb-4 border rounded"
+            />
+            <div className="flex gap-4">
+              <button
+                onClick={handlePhoneSubmit}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+              >
+                Submit
+              </button>
+              <button
+                onClick={handlePhoneClose}
                 className="flex-1 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
               >
                 Cancel
