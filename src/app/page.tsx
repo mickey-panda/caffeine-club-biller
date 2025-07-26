@@ -218,7 +218,9 @@ export default function Home() {
           <Link href={'/ManagerControl'}>
             <span className='text-white'>Account-Details</span>
           </Link>
-          
+          <Link href={'https://sites.google.com/view/caffeineclub-menu/home'} target='_'>
+            <span className='text-white'>Menu</span>
+          </Link>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>

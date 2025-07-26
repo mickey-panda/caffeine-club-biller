@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { MenuItem } from "@/types";
 import { Timestamp } from "firebase/firestore";
 import { getCashTransactions, getUpiTransactions, getPendingBills, getBills
-  ,getTotalCashRegister, getTotalUpiRegister, pushCashTransaction, pushUpiTransaction
+  ,getTotalCashRegister, getTotalUpiRegister, pushCashTransaction, pushUpiTransaction, updatePendingBillToFirebase
  } from "../Utilities/firebaseHelper";
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
 
@@ -60,6 +60,13 @@ export default function Manager() {
   const [upiTransReason, setUpiTransReason] = useState<string>("");
   const [upiTransFormError, setUpiTransFormError] = useState<string | null>(null);
 
+  //for update of pendings
+  const [isUpdateWindowOpen, setIsUpdateWindowOpen] = useState(false);
+  const [paidPendingUpi, setPaidPendingUpi] = useState<string>("");
+  const [paidPendingCash, setPaidPendingCash] = useState<string>("");
+  const [pendingWindowError, setPendingWindowError] = useState<string | null>(null);
+  const [selectedPendingBill, setSelectedPendingBill] = useState<Bill|null>(null);
+
   const fetchCashTransactions = async(startDate : Timestamp, endDate : Timestamp) => {
     try{
         const transactions = await getCashTransactions(startDate, endDate);
@@ -107,12 +114,18 @@ export default function Manager() {
       console.log('error pushing the transaction', err);
     }
   }
-
   const addNewUpiTransaction = async(amount: number, reason: string) =>{
     try{
       await pushUpiTransaction(amount, reason, Timestamp.now());
     }catch(err){
       console.log('error pushing the transaction', err);
+    }
+  }
+  const updatePendingBillToPaid = async (bill:Bill)=>{
+    try{
+      await updatePendingBillToFirebase(bill);
+    }catch(err){
+      console.log('error pushing the pending transaction', err);
     }
   }
 
@@ -128,12 +141,23 @@ export default function Manager() {
     setUpiTransFormError(null);
     setIsUpiTransModalOpen(true);
   };
+  const handleOpenPendingModal = (bill : Bill) => {
+    setPaidPendingCash("");
+    setPaidPendingUpi("");
+    setPendingWindowError(null);
+    setSelectedPendingBill(bill);
+    setIsUpdateWindowOpen(true);
+  };
 
   const handleCloseCashModal = () => {
     setIsCashTransModalOpen(false);
   };
   const handleCloseUpiModal = () => {
     setIsUpiTransModalOpen(false);
+  };
+  const handleClosePendingWindow = () => {
+    setSelectedPendingBill(null);
+    setIsUpdateWindowOpen(false);
   };
 
   const handleSubmitCashModal = async () => {
@@ -176,6 +200,53 @@ export default function Manager() {
     }
   };
 
+  const handleSubmitPendingModal = async () =>{
+    const upiAmount = Number(paidPendingUpi);
+    if (isNaN(upiAmount)) {
+      setPendingWindowError("Please enter a valid amount for Upi");
+      return;
+    }
+    const cashAmount = Number(paidPendingCash);
+    if (isNaN(cashAmount)) {
+      setPendingWindowError("Please enter a valid amount for cash");
+      return;
+    }
+    if((upiAmount+cashAmount) !== selectedPendingBill?.total){
+      setPendingWindowError("Total Upi+cash value should be bill total.");
+      return;
+    }
+    try {
+      if(selectedPendingBill){
+         selectedPendingBill.cash = cashAmount;
+         selectedPendingBill.upi = upiAmount;
+         await updatePendingBillToPaid(selectedPendingBill);
+         setSelectedPendingBill(null);
+         setLoading(true);
+         const startTimestamp = Timestamp.fromDate(startDate);
+         const endTimestamp = Timestamp.fromDate(endDate);
+         try{
+            await Promise.all([fetchCashTransactions(startTimestamp, endTimestamp), 
+                fetchUpiTransactions(startTimestamp, endTimestamp),
+                fetchPendingBills(startTimestamp,endTimestamp),
+                fetchAllBills(startTimestamp,endTimestamp)]);
+                fetchTotalCashRegister();
+                fetchTotalUpiRegister();
+         }catch{
+            setLoading(false);
+            setError('Could not load data');
+         }finally{
+            setLoading(false);
+         }
+      }
+      else{
+        setUpiTransFormError("No Bill found.");
+      }
+      handleClosePendingWindow();
+    } catch (e) {
+      setUpiTransFormError("Failed to add transaction. Try again.");
+      console.error(e);
+    }
+  }
   useEffect(() => {
     const startTimestamp = Timestamp.fromDate(startDate);
     const endTimestamp = Timestamp.fromDate(endDate);
@@ -376,6 +447,7 @@ export default function Manager() {
                   <th className="p-2 text-left">Status</th>
                   <th className="p-2 text-left">Mobile</th>
                   <th className="p-2 text-left">Date</th>
+                  <th className="p-2 text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -395,6 +467,13 @@ export default function Manager() {
                     <td className="p-2">{doc.status}</td>
                     <td className="p-2">{doc.mobile}</td>
                     <td className="p-2">{doc.time.toDate().toLocaleString()}</td>
+                    <td className="p-2">
+                      <button
+                        onClick={() => handleOpenPendingModal(doc)}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition">
+                        Update
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -511,6 +590,65 @@ export default function Manager() {
               </button>
               <button
                 onClick={handleSubmitUpiModal}
+                className="rounded bg-pink-500 px-4 py-2 text-white hover:bg-pink-600"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/*showing the pedning update modal*/}
+      {isUpdateWindowOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={handleClosePendingWindow}
+          />
+
+          {/* Modal */}
+          <div className="relative z-50 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-m font-semibold text-gray-800">
+              Update Pending Bill - {selectedPendingBill?.total}
+            </h3>
+
+            {pendingWindowError && (
+              <p className="mb-3 text-sm text-red-500">{pendingWindowError}</p>
+            )}
+
+            <div className="mb-4">
+              <label className="mb-1 block text-sm text-gray-600">UPI Amount</label>
+              <input
+                type="number"
+                value={paidPendingUpi}
+                onChange={(e) => setPaidPendingUpi(e.target.value)}
+                className="w-full rounded border p-2 text-black outline-none focus:border-pink-500"
+                placeholder="Enter upi amount"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-1 block text-sm text-gray-600">Cash Amount</label>
+              <input
+                type="number"
+                value={paidPendingCash}
+                onChange={(e) => setPaidPendingCash(e.target.value)}
+                className="w-full rounded border p-2 text-black outline-none focus:border-pink-500"
+                placeholder="Enter cash amount"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleClosePendingWindow}
+                className="rounded bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitPendingModal}
                 className="rounded bg-pink-500 px-4 py-2 text-white hover:bg-pink-600"
               >
                 Save
