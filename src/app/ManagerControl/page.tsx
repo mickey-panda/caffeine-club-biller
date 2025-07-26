@@ -401,7 +401,9 @@ export default function Manager() {
                   <tr key={upi.id} className="border-b text-black">
                     <td className="p-2">{upi.id}</td>
                     <td className="p-2">{upi.reason}</td>
-                    <td className="p-2">₹{upi.amount}</td>
+                    <td className={`p-2 ${upi.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      ₹{upi.amount}
+                    </td>
                     <td className="p-2">{upi.time.toDate().toLocaleString()}</td>
                   </tr>
                 ))}
@@ -427,7 +429,9 @@ export default function Manager() {
                   <tr key={cash.id} className="border-b text-black">
                     <td className="p-2">{cash.id}</td>
                     <td className="p-2">{cash.reason}</td>
-                    <td className="p-2">₹{cash.amount}</td>
+                    <td className={`p-2 ${cash.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      ₹{cash.amount}
+                    </td>
                     <td className="p-2">{cash.time.toDate().toLocaleString()}</td>
                   </tr>
                 ))}
