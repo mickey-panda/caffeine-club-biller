@@ -50,6 +50,28 @@ export async function pushBillToFirebase (total : number, status : string, time 
     }
   }
 
+export async function updatePendingBillToFirebase(bill:Bill) {
+  try {
+    const billRef = doc(db, "bills", bill.id);
+
+    // Update the bill fields
+    await updateDoc(billRef, {
+      status: "Paid",
+      cash: bill.cash,
+      upi: bill.upi,
+    });
+
+    // Add to cash/upi transactions if necessary
+    if (bill.cash > 0) {
+      await pushCashTransaction(bill.cash, "Bill Updated - " + bill.id, Timestamp.now());
+    }
+    if (bill.upi > 0) {
+      await pushUpiTransaction(bill.upi, "Bill Updated - " + bill.id, Timestamp.now());
+    }
+  } catch (error) {
+    console.error("Error updating bill:", error);
+  }
+}
 export async function getBills(startDate: Timestamp, endDate: Timestamp): Promise<Bill[]> {
     try {
       const billsQuery = query(
