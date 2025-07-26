@@ -100,5 +100,16 @@
   { "id": 98, "name": "Kitkat", "category": "Milkshakes", "price": 79 },
   { "id": 99, "name": "Oreo", "category": "Milkshakes", "price": 59 },
   { "id": 100, "name": "Nutella", "category": "Milkshakes", "price": 79 },
-  { "id": 101, "name": "Brownie", "category": "Milkshakes", "price": 69 }
+  { "id": 101, "name": "Brownie", "category": "Milkshakes", "price": 69 },
+  { "id": 102, "name": "Chicken", "category": "Add Ons", "price": 30 },
+  { "id": 103, "name": "Cheese", "category": "Add Ons", "price": 20 },
+  { "id": 104, "name": "Peri Peri", "category": "Add Ons", "price": 10 },
+  { "id": 105, "name": "Grill Sandwich", "category": "Add Ons", "price": 10 },
+  { "id": 106, "name": "Fried Momo", "category": "Add Ons", "price": 15 },
+  { "id": 107, "name": "Water Bottle", "category": "Add Ons", "price": 10 },
+  { "id": 108, "name": "Cold Drink", "category": "Add Ons", "price": 20 },
+  { "id": 109, "name": "Brownie", "category": "Brownies", "price": 89 },
+  { "id": 110, "name": "Walnut Brownie", "category": "Brownies", "price": 99 },
+  { "id": 111, "name": "Sizzler Brownie", "category": "Brownies", "price": 149 },
+  { "id": 112, "name": "Sizzler Double Brownie", "category": "Brownies", "price": 169 }
 ]

@@ -16,7 +16,7 @@ export default function BillDetails({ table, updateItemQuantity, generateBill }:
         <div>
           {table.items.map(item => (
             <div key={item.id} className="flex text-gray-600 justify-between items-center mb-2">
-              <span>{item.name} ({item.price.toFixed(2)})</span>
+              <span>{item.name} - {item.category} ({item.price.toFixed(2)})</span>
               <div className="flex items-center">
                 <button
                   onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
