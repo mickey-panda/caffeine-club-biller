@@ -294,7 +294,7 @@ export default function Manager() {
                       <ul className="list-disc pl-4">
                         {doc.items.map((item, index) => (
                           <li key={index}>
-                            {item.name} (₹{item.price.toFixed(2)} x {item.quantity})
+                            {item.name} - {item.category} (₹{item.price.toFixed(2)} x {item.quantity})
                           </li>
                         ))}
                       </ul>
@@ -386,7 +386,7 @@ export default function Manager() {
                       <ul className="list-disc pl-4">
                         {doc.items.map((item, index) => (
                           <li key={index}>
-                            {item.name} (₹{item.price.toFixed(2)} x {item.quantity})
+                            {item.name} - {item.category} (₹{item.price.toFixed(2)} x {item.quantity})
                           </li>
                         ))}
                       </ul>
