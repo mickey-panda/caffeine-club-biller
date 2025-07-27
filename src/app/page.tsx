@@ -323,13 +323,13 @@ export default function Home() {
       {isPhoneNumber && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Enter Phone number</h2>
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Enter Phone number or name</h2>
             <p className="text-center text-gray-600 mb-4">Total Bill: ₹{billAmount}</p>
             <input
-              type="number"
+              type="text"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Enter Phone number"
+              placeholder="Enter Phone number or name"
               className="w-full text-black p-2 mb-4 border rounded"
             />
             <div className="flex gap-4">
