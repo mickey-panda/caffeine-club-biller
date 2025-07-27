@@ -7,6 +7,7 @@ import { getCashTransactions, getUpiTransactions, getPendingBills, getBills
   updatePendingBillToFirebase
  } from "../Utilities/firebaseHelper";
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
+import Link from "next/link";
 
 interface Bill {
   id: string;
@@ -286,8 +287,16 @@ export default function Manager() {
 
   return (
     <div className="min-h-screen bg-white p-6">
+      
       {/* Date Filters */}
       <div className="mb-6 flex gap-4 justify-center">
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-red-500 rounded-lg shadow hover:scale-105 hover:shadow-lg transition-transform duration-200 ease-in-out font-medium mr-16">
+            Tables
+          </Link>
+        </div>
         <div>
           <label className="block text-gray-700">Start Date</label>
           <input
