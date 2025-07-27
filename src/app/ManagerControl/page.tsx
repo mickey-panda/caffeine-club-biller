@@ -340,24 +340,40 @@ export default function Manager() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-4 mb-6">
-        {["bills", "cash", "upi", "pending"].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setSelectedTab(tab as "bills" | "cash" | "upi" | "pending")}
-            className={`px-4 py-2 rounded ${
-              selectedTab === tab ? "bg-pink-500 text-white" : "bg-gray-200 text-black"
-            }`}
-          >
-            {tab === "bills"
-              ? "All Bills"
-              : tab === "cash"
-              ? "Cash Transactions"
-              : tab === "upi"
-              ? "UPI Transactions"
-              : "Pendings"}
-          </button>
-        ))}
+      <div className="flex justify-between items-center gap-4 mb-6">
+        {/* Tabs */}
+        <div className="flex gap-4">
+          {["bills", "cash", "upi", "pending"].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setSelectedTab(tab as "bills" | "cash" | "upi" | "pending")}
+              className={`px-4 py-2 rounded transition-colors duration-200 ${
+                selectedTab === tab
+                  ? "bg-pink-500 text-white"
+                  : "bg-gray-200 text-black hover:bg-gray-300"
+              }`}
+            >
+              {tab === "bills"
+                ? "All Bills"
+                : tab === "cash"
+                ? "Cash Transactions"
+                : tab === "upi"
+                ? "UPI Transactions"
+                : "Pendings"}
+            </button>
+          ))}
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search Name or Number"
+            className="w-100 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 text-black"
+            onChange={(e) => handleSearchPendingData(e.target.value)}
+            hidden= {selectedTab!=="pending"}
+          />
+        </div>
       </div>
 
       {/* Loading/Error */}
@@ -465,12 +481,6 @@ export default function Manager() {
       )}
       {!loading && selectedTab === 'pending' &&(
         <div className="overflow-x-auto">
-            <input
-                type="text"
-                onChange={(e) => handleSearchPendingData(e.target.value)}
-                className="w-100 rounded border p-2 text-black outline-none focus:border-pink-500 mb-8"
-                placeholder="Search Name or Number"
-              />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-200 text-gray-400">
