@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { MenuItem } from "@/types";
 import { Timestamp } from "firebase/firestore";
 import { getCashTransactions, getUpiTransactions, getPendingBills, getBills
-  ,getTotalCashRegister, getTotalUpiRegister, pushCashTransaction, pushUpiTransaction, updatePendingBillToFirebase
+  ,getTotalCashRegister, getTotalUpiRegister, pushCashTransaction, pushUpiTransaction, 
+  updatePendingBillToFirebase
  } from "../Utilities/firebaseHelper";
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
 
@@ -47,6 +48,7 @@ export default function Manager() {
   const [selectedTab, setSelectedTab] = useState<"cash" | "upi" | "bills" | "pending">("bills");
   const [totalCash, setTotalCash] = useState<number>(0);
   const [totalUpi, setTotalUpi] = useState<number>(0);
+  const [filteredPendingBills, setFilteredPendingBills] = useState<Bill[]>(pendingBills);
 
   //for cashTransactions
   const [isCashTransModalOpen, setIsCashTransModalOpen] = useState(false);
@@ -87,6 +89,7 @@ export default function Manager() {
     try{
         const bills = await getPendingBills(startDate, endDate);
         setPendingBills(bills);
+        setFilteredPendingBills(bills)
     }catch(err){
         setError("Failed to load Pending Bills. Please try again." + err);
     }
@@ -245,6 +248,17 @@ export default function Manager() {
     } catch (e) {
       setUpiTransFormError("Failed to add transaction. Try again.");
       console.error(e);
+    }
+  }
+
+  const handleSearchPendingData = (searchKey : string) => {
+    if (!searchKey) {
+      setFilteredPendingBills(pendingBills);
+    } else {
+      const lowerQuery = searchKey.toLowerCase();
+      setFilteredPendingBills(
+        pendingBills.filter((bill) => bill.mobile.toLowerCase().includes(lowerQuery))
+      );
     }
   }
   useEffect(() => {
@@ -442,6 +456,12 @@ export default function Manager() {
       )}
       {!loading && selectedTab === 'pending' &&(
         <div className="overflow-x-auto">
+            <input
+                type="text"
+                onChange={(e) => handleSearchPendingData(e.target.value)}
+                className="w-100 rounded border p-2 text-black outline-none focus:border-pink-500 mb-8"
+                placeholder="Search Name or Number"
+              />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-200 text-gray-400">
@@ -455,7 +475,7 @@ export default function Manager() {
                 </tr>
               </thead>
               <tbody>
-                {pendingBills.map((doc) => (
+                {filteredPendingBills.map((doc) => (
                   <tr key={doc.id} className="border-b text-black">
                     <td className="p-2">{doc.id}</td>
                     <td className="p-2">
