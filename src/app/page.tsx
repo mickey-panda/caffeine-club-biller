@@ -37,6 +37,7 @@ export default function Home() {
   // Load data from localStorage on client-side after initial render
   useEffect(() => {
     const savedTables = localStorage.getItem('restaurantTables');
+    console.log(savedTables);
     if (savedTables) {
       try {
         const parsedTables = JSON.parse(savedTables);
@@ -166,7 +167,7 @@ export default function Home() {
   };
 
 
-  const closeQRCode = async() => {
+  const submitQRCode = async() => {
     await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),paidAmountCash,billAmount-paidAmountCash, selectedTable?.items);
     setPaidAmountCash(0);
     setShowQRCode(false);
@@ -178,6 +179,11 @@ export default function Home() {
     setSelectedTable(null);
     localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
   };
+
+  const closeQRCode = () =>{
+    setShowQRCode(false);
+    setPaymentMethod(null);
+  }
 
   const closePaymentModal = () => {
     setShowPaymentModal(false);
@@ -277,17 +283,28 @@ export default function Home() {
       {showQRCode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">Scan to Pay ₹{billAmount - paidAmountCash}</h2>
+            <h2 className="text-xl text-center text-gray-600 font-semibold mb-4">
+              Scan to Pay ₹{billAmount - paidAmountCash}
+            </h2>
             <div className="flex justify-center mb-4">
               <QRCodeSVG value={upiLink} size={200} />
             </div>
             <p className="text-center text-gray-400 mb-4">Pay using UPI</p>
-            <button
-              onClick={closeQRCode}
-              className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-            >
-              Close
-            </button>
+
+            <div className="flex gap-4">
+              <button
+                onClick={closeQRCode}
+                className="w-1/2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Close
+              </button>
+              <button
+                onClick={submitQRCode}
+                className="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+              >
+                Paid
+              </button>
+            </div>
           </div>
         </div>
       )}
