@@ -110,6 +110,6 @@
   { "id": 108, "name": "Cold Drink", "category": "Add Ons", "price": 20 },
   { "id": 109, "name": "Brownie", "category": "Brownies", "price": 89 },
   { "id": 110, "name": "Walnut Brownie", "category": "Brownies", "price": 99 },
-  { "id": 111, "name": "Sizzler Brownie", "category": "Brownies", "price": 149 },
-  { "id": 112, "name": "Sizzler Double Brownie", "category": "Brownies", "price": 169 }
+  { "id": 111, "name": "Sizzler Brownie", "category": "Brownies", "price": 169 },
+  { "id": 112, "name": "Sizzler Double Brownie", "category": "Brownies", "price": 189 }
 ]
