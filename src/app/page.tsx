@@ -8,6 +8,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Timestamp} from 'firebase/firestore';
 import { pushBillToFirebase } from './Utilities/firebaseHelper';
 import Link from 'next/link';
+import Loader from './CommonControls/Loader';
 
 export default function Home() {
   // Initialize tables with default state for both server and client
@@ -33,6 +34,7 @@ export default function Home() {
   const [paidAmountCash, setPaidAmountCash] = useState(0);
   const [isPhoneNumber, setIsPhoneNumber] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isPageBusy, setIsPageBusy] = useState(false);
 
   // Load data from localStorage on client-side after initial render
   useEffect(() => {
@@ -128,6 +130,7 @@ export default function Home() {
       setPaidAmountCash(0);
       setShowQRCode(true);
     } else if (method === 'Cash') {
+      setIsPageBusy(true);
       await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),billAmount,0, selectedTable?.items);
       const updatedTables = tables.map(t =>
         t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
@@ -136,6 +139,7 @@ export default function Home() {
       setSelectedTable(null);
       localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
       setPaidAmountCash(0);
+      setIsPageBusy(false);
     } else if (method === 'Both') {
       setShowCashInput(true);
     } else if(method === 'Pending'){
@@ -152,6 +156,7 @@ export default function Home() {
     }
     setShowCashInput(false);
     if (cash === billAmount) {
+      setIsPageBusy(true);
       await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),billAmount,0, selectedTable?.items);
       const updatedTables = tables.map(t =>
         t.id === selectedTable!.id ? { ...t, isOccupied: false, items: [], total: 0 } : t
@@ -159,6 +164,7 @@ export default function Home() {
       setTables(updatedTables);
       setSelectedTable(null);
       localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+      setIsPageBusy(false);
     } else {
       setPaidAmountCash(cash);
       setShowQRCode(true);
@@ -168,6 +174,7 @@ export default function Home() {
 
 
   const submitQRCode = async() => {
+    setIsPageBusy(true);
     await pushBillToFirebase(billAmount,'Paid',Timestamp.now(),paidAmountCash,billAmount-paidAmountCash, selectedTable?.items);
     setPaidAmountCash(0);
     setShowQRCode(false);
@@ -178,6 +185,7 @@ export default function Home() {
     setTables(updatedTables);
     setSelectedTable(null);
     localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+    setIsPageBusy(false);
   };
 
   const closeQRCode = () =>{
@@ -202,6 +210,7 @@ export default function Home() {
     setPhoneNumber('');
   }
   const handlePhoneSubmit = async()=>{
+    setIsPageBusy(true)
     await pushBillToFirebase(billAmount,'Pending',Timestamp.now(),0,0, selectedTable?.items, phoneNumber);
     setIsPhoneNumber(false);
     setPhoneNumber('');
@@ -212,6 +221,7 @@ export default function Home() {
     setTables(updatedTables);
     setSelectedTable(null);
     localStorage.setItem('restaurantTables', JSON.stringify(updatedTables));
+    setIsPageBusy(false);
   }
 
   // Generate UPI payment link
@@ -366,6 +376,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      {isPageBusy && <Loader/>}
     </div>
   );
 }
