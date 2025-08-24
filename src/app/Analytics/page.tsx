@@ -93,6 +93,10 @@ export default function Analytics() {
 
   // Sort by revenue generated (descending)
   const sortedByRevenue = [...itemAnalytics].sort((a, b) => b.totalRevenue - a.totalRevenue);
+  const calculateQuantityPercentage = (quantity: number) =>
+    grandTotalQuantity > 0 ? ((quantity / grandTotalQuantity) * 100).toFixed(2) : "0.00";
+  const calculateRevenuePercentage = (revenue: number) =>
+    grandTotalRevenue > 0 ? ((revenue / grandTotalRevenue) * 100).toFixed(2) : "0.00";
 
   return (
     <div className="min-h-screen bg-white p-6">
@@ -152,8 +156,8 @@ export default function Analytics() {
                     {sortedByQuantity.map((item) => (
                     <tr key={item.id} className="border-b text-black">
                         <td className="p-2">{item.name} - {item.category} (₹{item.price.toFixed(2)})</td>
-                        <td className="p-2">{item.totalQuantity}</td>
-                        <td className="p-2">₹{item.totalRevenue.toFixed(2)}</td>
+                        <td className="p-2">{item.totalQuantity} - ({calculateQuantityPercentage(item.totalQuantity)}%)</td>
+                        <td className="p-2">₹{item.totalRevenue.toFixed(2)} - ({calculateRevenuePercentage(item.totalRevenue)}%)</td>
                     </tr>
                     ))}
                 </tbody>
@@ -174,8 +178,8 @@ export default function Analytics() {
                     {sortedByRevenue.map((item) => (
                     <tr key={item.id} className="border-b text-black">
                         <td className="p-2">{item.name} - {item.category} (₹{item.price.toFixed(2)})</td>
-                        <td className="p-2">{item.totalQuantity}</td>
-                        <td className="p-2">₹{item.totalRevenue.toFixed(2)}</td>
+                        <td className="p-2">{item.totalQuantity} - ({calculateQuantityPercentage(item.totalQuantity)}%)</td>
+                        <td className="p-2">₹{item.totalRevenue.toFixed(2)} - ({calculateRevenuePercentage(item.totalRevenue)}%)</td>
                     </tr>
                     ))}
                 </tbody>

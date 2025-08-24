@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { MenuItem } from "@/types";
 import {  Timestamp } from "firebase/firestore";
 import { getBills } from "../Utilities/firebaseHelper";
+import Link from "next/link";
 
 interface Bill {
   id:string,
@@ -57,6 +58,13 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-white p-6">
       <div className="mb-6 flex gap-4 justify-center">
+        <div>
+          <Link
+            href="/Analytics"
+            className="inline-flex items-center px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-red-500 rounded-lg shadow hover:scale-105 hover:shadow-lg transition-transform duration-200 ease-in-out font-medium mr-16">
+            Go to Analytics
+          </Link>
+        </div>
         <div>
           <label className="block text-gray-700">Start Date</label>
           <input
