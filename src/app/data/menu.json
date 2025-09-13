@@ -117,4 +117,6 @@
   { "id": 115, "name": "Egg", "category": "Tortilla Wrap", "price": 109 },
   { "id": 116, "name": "Chicken", "category": "Tortilla Wrap", "price": 139 },
   { "id": 117, "name": "Chicken And Egg", "category": "Tortilla Wrap", "price": 159 }
+  { "id": 118, "name": "Vanilla Muffins", "category": "Muffins", "price": 20 },
+  { "id": 119, "name": "Chocolate Muffins", "category": "Muffins", "price": 25 }
 ]
