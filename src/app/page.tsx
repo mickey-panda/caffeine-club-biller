@@ -234,6 +234,9 @@ export default function Home() {
           <Link href={'/ManagerControl'}>
             <span className='text-white'>Account-Details</span>
           </Link>
+          <Link href={'/OnlineOrders'}>
+            <span className='text-white'>Online-Orders</span>
+          </Link>
           <Link href={'https://sites.google.com/view/caffeineclub-menu/home'} target='_'>
             <span className='text-white'>Menu</span>
           </Link>
