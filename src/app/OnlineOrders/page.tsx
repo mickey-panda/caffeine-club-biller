@@ -27,6 +27,7 @@ interface Order {
   slot: FirestoreTimestamp | Date; // Can be a timestamp object or a Date
   createdAt: FirestoreTimestamp;
   status: OrderStatus;
+  phone: number;
 }
 
 // **Helper function to safely format the slot time**
@@ -170,6 +171,7 @@ export default function OnlineOrders() {
                   <th className="p-2 text-left">Items</th>
                   <th className="p-2 text-left">Total (₹)</th>
                   <th className="p-2 text-left">Delivery Slot</th>
+                  <th className="p-2 text-left">Phone</th>
                   <th className="p-2 text-left">Status</th>
                 </tr>
               </thead>
@@ -191,6 +193,7 @@ export default function OnlineOrders() {
                       {/* Use the helper function here */}
                       {formatSlotTime(order.slot)}
                     </td>
+                    <td className="p-2 text-sm">{order.phone}</td>
                     <td className="p-2">
                       <select
                         value={order.status}
