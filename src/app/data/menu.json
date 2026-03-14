@@ -106,7 +106,7 @@
   { "id": 104, "name": "Peri Peri", "category": "Add Ons", "price": 10 },
   { "id": 105, "name": "Grill Sandwich", "category": "Add Ons", "price": 10 },
   { "id": 106, "name": "Fried Momo", "category": "Add Ons", "price": 15 },
-  { "id": 107, "name": "Water Bottle", "category": "Add Ons", "price": 10 },
+  { "id": 107, "name": "Water Bottle (Small)", "category": "Add Ons", "price": 10 },
   { "id": 108, "name": "Cold Drink", "category": "Add Ons", "price": 20 },
   { "id": 109, "name": "Brownie", "category": "Brownies", "price": 89 },
   { "id": 110, "name": "Walnut Brownie", "category": "Brownies", "price": 99 },
@@ -118,5 +118,12 @@
   { "id": 116, "name": "Chicken", "category": "Tortilla Wrap", "price": 139 },
   { "id": 117, "name": "Chicken And Egg", "category": "Tortilla Wrap", "price": 159 },
   { "id": 118, "name": "Vanilla Muffins", "category": "Muffins", "price": 20 },
-  { "id": 119, "name": "Chocolate Muffins", "category": "Muffins", "price": 25 }
+  { "id": 119, "name": "Chocolate Muffins", "category": "Muffins", "price": 25 },
+  { "id": 120, "name": "Mango Lassi", "category": "Lassi", "price": 69 },
+  { "id": 121, "name": "Strawberry Lassi", "category": "Lassi", "price": 69 },
+  { "id": 122, "name": "Rose Lassi", "category": "Lassi", "price": 69 },
+  { "id": 123, "name": "Classic Lassi", "category": "Lassi", "price": 59 },
+  { "id": 124, "name": "Veg", "category": "Jhol Momo", "price": 139 },
+  { "id": 125, "name": "Chicken", "category": "Jhol Momo", "price": 159 },
+  { "id": 126, "name": "Water Bottle (Large)", "category": "Add Ons", "price": 20 }
 ]
